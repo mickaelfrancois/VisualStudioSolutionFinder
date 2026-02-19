@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Configuration;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Microsoft.Extensions.Configuration;
 
 namespace VisualStudioSolutionFinder;
 
@@ -8,16 +8,16 @@ public class RefreshCacheCommand : Command
 {
     public override int Execute(CommandContext context, CancellationToken cancellationToken)
     {
-        var configuration = new ConfigurationBuilder()
+        IConfigurationRoot configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .Build();
 
-        var searchSettings = new SearchSettings();
+        SearchSettings searchSettings = new();
         configuration.GetSection("SearchSettings").Bind(searchSettings);
 
-        var rootPath = string.IsNullOrWhiteSpace(searchSettings.RootPath) 
-            ? Directory.GetCurrentDirectory() 
+        string rootPath = string.IsNullOrWhiteSpace(searchSettings.RootPath)
+            ? Directory.GetCurrentDirectory()
             : searchSettings.RootPath;
 
         if (!Directory.Exists(rootPath))
@@ -28,16 +28,16 @@ public class RefreshCacheCommand : Command
 
         AnsiConsole.MarkupLine($"[blue]Reconstruction du cache pour : {rootPath.EscapeMarkup()}[/]");
 
-        var cacheManager = new CacheManager();
+        CacheManager cacheManager = new();
         SolutionCache cache = null!;
 
         AnsiConsole.Status()
-            .Start("[yellow]Scan complet en cours...[/]", ctx =>
+            .Start("[yellow]Scan complet en cours...[/]", context =>
             {
-                ctx.Spinner(Spinner.Known.Dots);
-                ctx.SpinnerStyle(Style.Parse("yellow"));
+                context.Spinner(Spinner.Known.Dots);
+                context.SpinnerStyle(Style.Parse("yellow"));
 
-                cache = cacheManager.PerformFullScan(rootPath);
+                cache = CacheManager.PerformFullScan(rootPath);
                 cacheManager.SaveCache(cache);
             });
 

@@ -16,21 +16,20 @@ public class ConfigCommand : Command<ConfigCommand.Settings>
 
     public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
-        var appSettingsPath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
+        string appSettingsPath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
 
         if (string.IsNullOrWhiteSpace(settings.RootPath))
         {
-            // Afficher la configuration actuelle
             if (File.Exists(appSettingsPath))
             {
                 try
                 {
-                    var json = File.ReadAllText(appSettingsPath);
-                    var config = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
-                    
+                    string json = File.ReadAllText(appSettingsPath);
+                    Dictionary<string, Dictionary<string, string>>? config = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
+
                     if (config != null && config.ContainsKey("SearchSettings") && config["SearchSettings"].ContainsKey("RootPath"))
                     {
-                        var currentPath = config["SearchSettings"]["RootPath"];
+                        string currentPath = config["SearchSettings"]["RootPath"];
                         AnsiConsole.MarkupLine($"[green]Chemin racine actuel :[/] {currentPath.EscapeMarkup()}");
                     }
                     else
@@ -50,15 +49,15 @@ public class ConfigCommand : Command<ConfigCommand.Settings>
 
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[dim]Pour définir un nouveau chemin : [/][cyan]dotnet run -- config \"C:\\MesProjets\"[/]");
+
             return 0;
         }
 
-        // Définir un nouveau chemin racine
-        var newRootPath = settings.RootPath;
+        string newRootPath = settings.RootPath;
 
         if (!Directory.Exists(newRootPath))
         {
-            var create = AnsiConsole.Confirm($"Le répertoire n'existe pas. Voulez-vous le créer ?");
+            bool create = AnsiConsole.Confirm($"Le répertoire n'existe pas. Voulez-vous le créer ?");
             if (create)
             {
                 try
@@ -79,10 +78,9 @@ public class ConfigCommand : Command<ConfigCommand.Settings>
             }
         }
 
-        // Mettre à jour appsettings.json
         try
         {
-            var config = new Dictionary<string, Dictionary<string, string>>
+            Dictionary<string, Dictionary<string, string>> config = new()
             {
                 ["SearchSettings"] = new Dictionary<string, string>
                 {
@@ -90,26 +88,25 @@ public class ConfigCommand : Command<ConfigCommand.Settings>
                 }
             };
 
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(config, options);
+            JsonSerializerOptions options = new() { WriteIndented = true };
+            string json = JsonSerializer.Serialize(config, options);
             File.WriteAllText(appSettingsPath, json);
 
             AnsiConsole.MarkupLine($"[green]✓[/] Chemin racine configuré : {newRootPath.EscapeMarkup()}");
 
-            // Demander si on veut scanner maintenant
-            var scanNow = AnsiConsole.Confirm("Voulez-vous scanner ce répertoire maintenant ?", defaultValue: true);
+            bool scanNow = AnsiConsole.Confirm("Voulez-vous scanner ce répertoire maintenant ?", defaultValue: true);
             if (scanNow)
             {
-                var cacheManager = new CacheManager();
+                CacheManager cacheManager = new();
                 SolutionCache cache = null!;
 
                 AnsiConsole.Status()
-                    .Start("[yellow]Scan en cours...[/]", ctx =>
+                    .Start("[yellow]Scan en cours...[/]", context =>
                     {
-                        ctx.Spinner(Spinner.Known.Dots);
-                        ctx.SpinnerStyle(Style.Parse("yellow"));
+                        context.Spinner(Spinner.Known.Dots);
+                        context.SpinnerStyle(Style.Parse("yellow"));
 
-                        cache = cacheManager.PerformFullScan(newRootPath);
+                        cache = CacheManager.PerformFullScan(newRootPath);
                         cacheManager.SaveCache(cache);
                     });
 

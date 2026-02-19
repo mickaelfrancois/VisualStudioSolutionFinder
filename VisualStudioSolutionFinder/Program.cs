@@ -9,7 +9,7 @@ internal static class Program
     {
         AnsiConsole.Write(
             new Rule("[yellow].Net Solution Finder[/]")
-                .RuleStyle("grey")               
+                .RuleStyle("grey")
                 .Centered());
 
         CommandApp<FindSolutionCommand> app = new();

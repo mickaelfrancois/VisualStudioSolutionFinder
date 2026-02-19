@@ -8,7 +8,7 @@ public class CacheManager
 
     public CacheManager()
     {
-        var exeDirectory = AppContext.BaseDirectory;
+        string exeDirectory = AppContext.BaseDirectory;
         _cacheFilePath = Path.Combine(exeDirectory, "solutions-cache.json");
     }
 
@@ -19,7 +19,8 @@ public class CacheManager
             if (!File.Exists(_cacheFilePath))
                 return null;
 
-            var json = File.ReadAllText(_cacheFilePath);
+            string json = File.ReadAllText(_cacheFilePath);
+
             return JsonSerializer.Deserialize<SolutionCache>(json);
         }
         catch
@@ -32,8 +33,8 @@ public class CacheManager
     {
         try
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(cache, options);
+            JsonSerializerOptions options = new() { WriteIndented = true };
+            string json = JsonSerializer.Serialize(cache, options);
             File.WriteAllText(_cacheFilePath, json);
         }
         catch
@@ -42,28 +43,28 @@ public class CacheManager
         }
     }
 
-    public List<string> SearchInCache(SolutionCache cache, string mask)
+    public static List<string> SearchInCache(SolutionCache cache, string mask)
     {
-        var normalizedMask = mask.ToLowerInvariant().Replace("*", "");
-        
+        string normalizedMask = mask.ToLowerInvariant().Replace("*", "");
+
         return cache.Solutions
-            .Where(solution => 
+            .Where(solution =>
             {
-                var fileName = Path.GetFileNameWithoutExtension(solution).ToLowerInvariant();
+                string fileName = Path.GetFileNameWithoutExtension(solution).ToLowerInvariant();
                 return fileName.Contains(normalizedMask);
             })
             .OrderBy(s => s)
             .ToList();
     }
 
-    public SolutionCache PerformFullScan(string rootPath)
+    public static SolutionCache PerformFullScan(string rootPath)
     {
-        var solutions = new List<string>();
+        List<string> solutions = [];
 
         try
         {
-            var slnFiles = Directory.GetFiles(rootPath, "*.sln", SearchOption.AllDirectories);
-            var slnxFiles = Directory.GetFiles(rootPath, "*.slnx", SearchOption.AllDirectories);
+            string[] slnFiles = Directory.GetFiles(rootPath, "*.sln", SearchOption.AllDirectories);
+            string[] slnxFiles = Directory.GetFiles(rootPath, "*.slnx", SearchOption.AllDirectories);
             solutions = slnFiles.Concat(slnxFiles).OrderBy(f => f).ToList();
         }
         catch
