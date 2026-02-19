@@ -135,49 +135,50 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
                 AnsiConsole.MarkupLine("[yellow]Opération annulée.[/]");
                 return 0;
             }
-
-            // Demander l'action à effectuer
-            var action = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title($"[cyan]Action pour : {Path.GetFileName(selected).EscapeMarkup()}[/]")
-                    .AddChoices(
-                        "Ouvrir la solution",
-                        "Ouvrir le dossier dans l'explorateur",
-                        "Annuler"
-                    )
-            );
-
-            if (action == "Annuler")
-            {
-                AnsiConsole.MarkupLine("[yellow]Opération annulée.[/]");
-                return 0;
-            }
-
-            if (action == "Ouvrir le dossier dans l'explorateur")
-            {
-                try
-                {
-                    var directory = Path.GetDirectoryName(selected);
-                    if (!string.IsNullOrEmpty(directory))
-                    {
-                        var psi = new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = directory,
-                            UseShellExecute = true
-                        };
-                        System.Diagnostics.Process.Start(psi);
-                        AnsiConsole.MarkupLine($"[green]Dossier ouvert : {directory.EscapeMarkup()}[/]");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    AnsiConsole.MarkupLine($"[red]Erreur lors de l'ouverture du dossier : {ex.Message.EscapeMarkup()}[/]");
-                    return 2;
-                }
-                return 0;
-            }
         }
 
+        // Demander l'action à effectuer
+        var action = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title($"[cyan]Action pour : {Path.GetFileName(selected).EscapeMarkup()}[/]")
+                .AddChoices(
+                    "Ouvrir la solution",
+                    "Ouvrir le dossier dans l'explorateur",
+                    "Annuler"
+                )
+        );
+
+        if (action == "Annuler")
+        {
+            AnsiConsole.MarkupLine("[yellow]Opération annulée.[/]");
+            return 0;
+        }
+
+        if (action == "Ouvrir le dossier dans l'explorateur")
+        {
+            try
+            {
+                var directory = Path.GetDirectoryName(selected);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = directory,
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    AnsiConsole.MarkupLine($"[green]Dossier ouvert : {directory.EscapeMarkup()}[/]");
+                }
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Erreur lors de l'ouverture du dossier : {ex.Message.EscapeMarkup()}[/]");
+                return 2;
+            }
+            return 0;
+        }
+
+        // Ouvrir la solution
         try
         {
             var psi = new System.Diagnostics.ProcessStartInfo
