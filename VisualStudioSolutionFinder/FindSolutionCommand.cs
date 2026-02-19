@@ -142,8 +142,8 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
         int maxNameLength = files.Max(f => Path.GetFileNameWithoutExtension(f).Length);
         int columnWidth = Math.Max(maxNameLength + 2, 30);
 
-        const string cancelOption = "── [[Annuler]] ──";
-        List<string> choices = [with(files), cancelOption];
+        const string cancelOption = "── [[Annuler]] ──";        
+        List<string> choices = new(files) { cancelOption };
 
         string selected = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
