@@ -184,6 +184,7 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
                 .AddChoices(
                     "Ouvrir la solution",
                     "Ouvrir le dossier dans l'explorateur",
+                    "Ouvrir un terminal",
                     "Annuler"
                 )
         );
@@ -192,6 +193,7 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
         {
             "Annuler" => CancelAction(),
             "Ouvrir le dossier dans l'explorateur" => OpenFolder(selected),
+            "Ouvrir un terminal" => OpenTerminal(selected),
             _ => OpenSolution(selected)
         };
     }
@@ -223,6 +225,74 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
         {
             AnsiConsole.MarkupLine($"[red]Erreur lors de l'ouverture du dossier : {ex.Message.EscapeMarkup()}[/]");
             return 2;
+        }
+    }
+
+    private static int OpenTerminal(string selected)
+    {
+        try
+        {
+            string? directory = Path.GetDirectoryName(selected);
+            if (string.IsNullOrEmpty(directory))
+                return 0;
+            
+            ProcessStartInfo processStartInfo;
+
+            if (IsWindowsTerminalAvailable())
+            {
+                processStartInfo = new()
+                {
+                    FileName = "wt.exe",
+                    Arguments = $"-d \"{directory}\"",
+                    UseShellExecute = true
+                };
+            }
+            else
+            {
+                processStartInfo = new()
+                {
+                    FileName = "powershell.exe",
+                    WorkingDirectory = directory,
+                    UseShellExecute = true
+                };
+            }
+
+            Process.Start(processStartInfo);
+            AnsiConsole.MarkupLine($"[green]Terminal ouvert dans : {directory.EscapeMarkup()}[/]");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Erreur lors de l'ouverture du terminal : {ex.Message.EscapeMarkup()}[/]");
+            return 2;
+        }
+    }
+
+    private static bool IsWindowsTerminalAvailable()
+    {
+        try
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string windowsAppsPath = Path.Combine(localAppData, "Microsoft", "WindowsApps", "wt.exe");
+
+            if (File.Exists(windowsAppsPath))
+                return true;
+
+            string? pathEnv = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrEmpty(pathEnv))
+                return false;
+
+            return pathEnv.Split(Path.PathSeparator)
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Any(path =>
+                {
+                    try { return File.Exists(Path.Combine(path, "wt.exe")); }
+                    catch { return false; }
+                });
+        }
+        catch
+        {
+            return false;
         }
     }
 
