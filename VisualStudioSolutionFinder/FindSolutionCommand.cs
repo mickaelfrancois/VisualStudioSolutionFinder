@@ -243,7 +243,7 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
                 processStartInfo = new()
                 {
                     FileName = "wt.exe",
-                    Arguments = $"-d \"{directory}\"",
+                    Arguments = $"-w 0 nt -d \"{directory}\"",
                     UseShellExecute = true
                 };
             }
