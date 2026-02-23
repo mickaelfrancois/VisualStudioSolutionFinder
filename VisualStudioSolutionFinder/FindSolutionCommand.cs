@@ -182,7 +182,8 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
             new SelectionPrompt<string>()
                 .Title($"[cyan]Action pour : {Path.GetFileName(selected).EscapeMarkup()}[/]")
                 .AddChoices(
-                    "Ouvrir la solution",
+                    "Ouvrir la solution dans Visual Studio",
+                    "Ouvrir la solution dans Visual Studio Code",
                     "Ouvrir le dossier dans l'explorateur",
                     "Ouvrir un terminal",
                     "Annuler"
@@ -194,7 +195,8 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
             "Annuler" => CancelAction(),
             "Ouvrir le dossier dans l'explorateur" => OpenFolder(selected),
             "Ouvrir un terminal" => OpenTerminal(selected),
-            _ => OpenSolution(selected)
+            "Ouvrir la solution dans Visual Studio Code" => OpenSolutionVisualStudioCode(selected),
+            _ => OpenSolutionVisualStudio(selected)
         };
     }
 
@@ -296,13 +298,43 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
         }
     }
 
-    private static int OpenSolution(string selected)
+    private static int OpenSolutionVisualStudio(string selected)
     {
         try
         {
             ProcessStartInfo processStartInfo = new()
             {
                 FileName = selected,
+                UseShellExecute = true
+            };
+            Process.Start(processStartInfo);
+
+            AnsiConsole.MarkupLine($"[green]Solution ouverte : {Path.GetFileName(selected).EscapeMarkup()}[/]");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Erreur lors de l'ouverture : {ex.Message.EscapeMarkup()}[/]");
+            return 2;
+        }
+    }
+
+
+    private static int OpenSolutionVisualStudioCode(string selected)
+    {
+        try
+        {
+            string? directory = Path.GetDirectoryName(selected);
+            if (string.IsNullOrEmpty(directory))
+            {
+                AnsiConsole.MarkupLine("[red]Impossible de déterminer le répertoire de la solution.[/]");
+                return 2;
+            }
+
+            ProcessStartInfo processStartInfo = new()
+            {
+                FileName = "code",
+                Arguments = $"\"{directory}\"",
                 UseShellExecute = true
             };
             Process.Start(processStartInfo);
