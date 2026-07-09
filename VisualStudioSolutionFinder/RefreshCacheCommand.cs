@@ -9,7 +9,7 @@ public class RefreshCacheCommand : Command
     public override int Execute(CommandContext context, CancellationToken cancellationToken)
     {
         IConfigurationRoot configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .Build();
 

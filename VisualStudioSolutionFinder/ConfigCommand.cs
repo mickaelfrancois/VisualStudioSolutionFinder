@@ -16,7 +16,7 @@ public class ConfigCommand : Command<ConfigCommand.Settings>
 
     public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
-        string appSettingsPath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
+        string appSettingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 
         if (string.IsNullOrWhiteSpace(settings.RootPath))
         {

@@ -42,7 +42,7 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
     private static string LoadRootPathFromConfiguration()
     {
         IConfigurationRoot configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .Build();
 
@@ -182,6 +182,7 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
             new SelectionPrompt<string>()
                 .Title($"[cyan]Action pour : {Path.GetFileName(selected).EscapeMarkup()}[/]")
                 .AddChoices(
+                    "Ouvrir avec Claude",
                     "Ouvrir la solution dans Visual Studio",
                     "Ouvrir la solution dans Visual Studio Code",
                     "Ouvrir le dossier dans l'explorateur",
@@ -195,6 +196,7 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
             "Annuler" => CancelAction(),
             "Ouvrir le dossier dans l'explorateur" => OpenFolder(selected),
             "Ouvrir un terminal" => OpenTerminal(selected),
+            "Ouvrir avec Claude" => OpenClaude(selected),
             "Ouvrir la solution dans Visual Studio Code" => OpenSolutionVisualStudioCode(selected),
             _ => OpenSolutionVisualStudio(selected)
         };
@@ -266,6 +268,54 @@ public class FindSolutionCommand : Command<FindSolutionCommand.Settings>
         catch (Exception ex)
         {
             AnsiConsole.MarkupLine($"[red]Erreur lors de l'ouverture du terminal : {ex.Message.EscapeMarkup()}[/]");
+            return 2;
+        }
+    }
+
+    private static int OpenClaude(string selected)
+    {
+        try
+        {
+            string? directory = Path.GetDirectoryName(selected);
+            if (string.IsNullOrEmpty(directory))
+                return 0;
+
+            string title = Path.GetFileName(directory);
+
+            // ponytail: title vient d'un nom de dossier (Windows interdit " dans un nom,
+            // donc pas d'évasion de la chaîne) ; on neutralise ` et $ actifs en guillemets doubles PS.
+            string safeTitle = title.Replace("`", "``").Replace("$", "`$");
+
+            // ws est une fonction du profil pwsh (PS7) → pwsh.exe, pas powershell.exe.
+            ProcessStartInfo processStartInfo;
+
+            if (IsWindowsTerminalAvailable())
+            {
+                processStartInfo = new()
+                {
+                    FileName = "wt.exe",
+                    Arguments = $"-w 0 nt -d \"{directory}\" pwsh.exe -NoExit -Command ws \"{safeTitle}\"",
+                    UseShellExecute = true
+                };
+            }
+            else
+            {
+                processStartInfo = new()
+                {
+                    FileName = "pwsh.exe",
+                    Arguments = $"-NoExit -Command ws \"{safeTitle}\"",
+                    WorkingDirectory = directory,
+                    UseShellExecute = true
+                };
+            }
+
+            Process.Start(processStartInfo);
+            AnsiConsole.MarkupLine($"[green]Claude ouvert : ws \"{title.EscapeMarkup()}\"[/]");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Erreur lors de l'ouverture de Claude : {ex.Message.EscapeMarkup()}[/]");
             return 2;
         }
     }
